@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>你的焦虑，来自哪里？</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    background: #faf8f5;
+    color: #3d3d3d;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+    line-height: 1.7;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 400px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 4px 32px rgba(0,0,0,0.06);
+    overflow: hidden;
+    transition: all 0.35s ease;
+    min-height: 520px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ===== Screen ===== */
+  .screen {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    padding: 40px 28px;
+    animation: fadeSlideIn 0.4s ease;
+  }
+  .screen.active { display: flex; }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ===== Cover ===== */
+  .cover {
+    text-align: center;
+    justify-content: center;
+    gap: 28px;
+    padding: 48px 28px;
+  }
+  .cover .icon { font-size: 52px; }
+  .cover h1 {
+    font-size: 26px;
+    font-weight: 600;
+    color: #2c2c2c;
+    letter-spacing: 1px;
+  }
+  .cover .subtitle {
+    color: #8a8a8a;
+    font-size: 14px;
+    margin-top: -16px;
+  }
+  .cover .meta {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+    font-size: 13px;
+    color: #a0a0a0;
+  }
+  .cover .meta span { display: flex; align-items: center; gap: 4px; }
+
+  /* ===== Buttons ===== */
+  .btn-primary {
+    display: block;
+    width: 100%;
+    padding: 14px 0;
+    border: none;
+    border-radius: 12px;
+    background: #5b7a6b;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+  }
+  .btn-primary:hover  { background: #4e6a5d; }
+  .btn-primary:active { transform: scale(0.98); }
+
+  .btn-outline {
+    display: block;
+    width: 100%;
+    padding: 12px 0;
+    border: 1.5px solid #d0cfcd;
+    border-radius: 12px;
+    background: transparent;
+    color: #5b5b5b;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    letter-spacing: 1px;
+  }
+  .btn-outline:hover { border-color: #5b7a6b; color: #5b7a6b; }
+
+  /* ===== Question ===== */
+  .question-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .question-num {
+    font-size: 13px;
+    color: #b0b0b0;
+    letter-spacing: 1px;
+  }
+  .question-text {
+    font-size: 18px;
+    font-weight: 500;
+    color: #2c2c2c;
+    margin-bottom: 32px;
+    line-height: 1.6;
+  }
+  .options { display: flex; flex-direction: column; gap: 12px; flex: 1; }
+  .option {
+    display: flex;
+    align-items: center;
+    padding: 14px 18px;
+    border: 1.5px solid #e8e6e3;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.25s;
+    font-size: 15px;
+    color: #4a4a4a;
+    gap: 10px;
+  }
+  .option:hover { border-color: #c4a882; background: #fdf9f3; }
+  .option.selected { border-color: #5b7a6b; background: #f2f7f4; color: #2c2c2c; }
+  .option .letter {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: #f0eeeb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: #8a8a8a;
+    flex-shrink: 0;
+    transition: all 0.25s;
+  }
+  .option.selected .letter { background: #5b7a6b; color: #fff; }
+
+  .btn-next {
+    margin-top: 24px;
+    opacity: 0.35;
+    pointer-events: none;
+    transition: all 0.25s;
+  }
+  .btn-next.enabled { opacity: 1; pointer-events: auto; }
+  .hint-tap {
+    text-align: center;
+    font-size: 12px;
+    color: #c0bdb8;
+    margin-top: 8px;
+    transition: opacity 0.25s;
+  }
+  .hint-tap.hidden { opacity: 0; }
+
+  /* ===== Progress ===== */
+  .progress-bar {
+    display: flex;
+    gap: 6px;
+    margin-top: 20px;
+    justify-content: center;
+  }
+  .progress-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #e0dedb;
+    transition: background 0.3s;
+  }
+  .progress-dot.done { background: #5b7a6b; }
+  .progress-dot.current { background: #c4a882; }
+
+  /* ===== Result ===== */
+  .result { text-align: center; gap: 20px; padding: 40px 28px; }
+  .result .type-badge {
+    display: inline-block;
+    padding: 6px 20px;
+    border-radius: 20px;
+    font-size: 13px;
+    letter-spacing: 1px;
+    background: #f2f7f4;
+    color: #5b7a6b;
+  }
+  .result .type-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #2c2c2c;
+  }
+  .result .quote {
+    color: #6a6a6a;
+    font-size: 15px;
+    line-height: 1.8;
+    max-width: 280px;
+    margin: 0 auto;
+  }
+  .result .insight {
+    background: #faf8f5;
+    border-radius: 12px;
+    padding: 18px;
+    font-size: 14px;
+    color: #5a5a5a;
+    line-height: 1.8;
+  }
+  .result .insight strong { color: #3d3d3d; }
+  .result .course-recommend {
+    font-size: 15px;
+    color: #5b7a6b;
+    font-weight: 500;
+  }
+  .result .actions { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+
+  /* ===== Footer ===== */
+  .footer {
+    text-align: center;
+    padding: 8px;
+    font-size: 11px;
+    color: #c0c0c0;
+    letter-spacing: 1px;
+  }
+
+  /* ===== Responsive ===== */
+  @media (max-width: 420px) {
+    .container { max-width: 100%; border-radius: 16px; }
+    .screen { padding: 32px 20px; }
+    .cover h1 { font-size: 23px; }
+    .question-text { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container" id="app">
+  <div class="screen cover active" id="cover">
+    <div class="icon">🌿</div>
+    <h1>你的焦虑，来自哪里？</h1>
+    <p class="subtitle">3 分钟 · 7 道题 · 测出焦虑的真正根源</p>
+    <div class="meta">
+      <span>⏱ 2 分钟</span>
+      <span>📋 7 题</span>
+    </div>
+    <button class="btn-primary" onclick="start()">开始测试</button>
+  </div>
+</div>
+
+<script>
+// ---- Data ----
+const questions = [
+  {
+    q: "最近一个月，你最容易为什么事感到烦躁？",
+    opts: [
+      { letter: "A", text: "跟伴侣或孩子起冲突" },
+      { letter: "B", text: "想起小时候的事，心里堵" },
+      { letter: "C", text: "工作没劲，觉得人生不该只是这样" },
+      { letter: "D", text: "身体各种小毛病，精力大不如前" }
+    ]
+  },
+  {
+    q: "你花了最多精力去「搞定」的事情是什么？",
+    opts: [
+      { letter: "A", text: "改善家庭关系" },
+      { letter: "B", text: "理解自己为什么会变成这样" },
+      { letter: "C", text: "找到人生的下一个方向" },
+      { letter: "D", text: "调理身体状态" }
+    ]
+  },
+  {
+    q: "下面哪句话最戳中你？",
+    opts: [
+      { letter: "A", text: "你已经做得很好了，但家还是让你累" },
+      { letter: "B", text: "你身上有你父母的影子，你害怕传给下一代" },
+      { letter: "C", text: "你不缺能力，你缺的是一把火" },
+      { letter: "D", text: "身体不通，什么都做不了" }
+    ]
+  },
+  {
+    q: "如果有一整天空出来留给自己，你第一反应是什么？",
+    opts: [
+      { letter: "A", text: "终于可以好好陪家人了" },
+      { letter: "B", text: "只想一个人安静地待着" },
+      { letter: "C", text: "想找点真正有意义的事做" },
+      { letter: "D", text: "只想好好睡一觉，什么都不想" }
+    ]
+  },
+  {
+    q: "你最怕别人怎么评价你？",
+    opts: [
+      { letter: "A", text: "你不够顾家" },
+      { letter: "B", text: "你跟你爸妈越来越像了" },
+      { letter: "C", text: "你也就这样了" },
+      { letter: "D", text: "你看上去很累" }
+    ]
+  },
+  {
+    q: "你最想要的状态是什么？",
+    opts: [
+      { letter: "A", text: "家里不吵架，温馨一点" },
+      { letter: "B", text: "不再被过去绑住" },
+      { letter: "C", text: "重新有热情和方向" },
+      { letter: "D", text: "身体轻盈，精力充沛" }
+    ]
+  },
+  {
+    q: "如果有一场课，你希望它能给你什么？",
+    opts: [
+      { letter: "A", text: "学会怎么说话，家人愿意听" },
+      { letter: "B", text: "让那些陈年旧伤，真的放下" },
+      { letter: "C", text: "重新活过来，找到那股劲" },
+      { letter: "D", text: "身体和精力明显改善" }
+    ]
+  }
+];
+
+const results = {
+  A: {
+    label: "关系焦虑型",
+    quote: "你是一个拼尽全力维系关系的人。但家不应该是消耗你的地方，而是让你充电的地方。",
+    insight: "<strong>你的焦虑根源：</strong>你不是不够好，你只是少了一套让关系不再那么累的方法。",
+    course: "🎯 推荐了解：NLP 执行师课程",
+    link: "#",
+    drink: "你不会用沟通技巧去控制别人；你只想让家里的话，有人听得进去。"
+  },
+  B: {
+    label: "根源焦虑型",
+    quote: "你的焦虑，不来自眼前，来自更早的地方——那些没被看见的伤口，一直在悄悄影响你。",
+    insight: "<strong>你的焦虑根源：</strong>你不是在应付现在的问题，你是在还很久以前的债。看见它，你才能真正自由。",
+    course: "🎯 推荐了解：萨提亚心理营养课程",
+    link: "#",
+    drink: "你需要的不是一个答案，是一双能看见你的眼睛。"
+  },
+  C: {
+    label: "存在焦虑型",
+    quote: "你不缺能力，也不缺资源。你只是卡住了——像一座休眠的火山，表面平静，底下能量汹涌却找不到出口。",
+    insight: "<strong>你的焦虑根源：</strong>你的人生到了一个需要「升级」而不是「努力」的阶段。你需要一次唤醒。",
+    course: "🎯 推荐了解：尼克·莱佛士催眠课程",
+    link: "#",
+    drink: "技巧你已经够多了。现在需要的，是让你的底层状态匹配你的能力。"
+  },
+  D: {
+    label: "身体焦虑型",
+    quote: "你的焦虑，身体最先知道——睡不好、易疲劳、各种小毛病。身体不通，心也堵着。",
+    insight: "<strong>你的焦虑根源：</strong>你一直在用意志力撑着，但身体已经在提醒你：该停下来，先照顾好自己了。",
+    course: "🎯 推荐了解：子敬辟谷养生营",
+    link: "#",
+    drink: "不是你又懒了或者老了。是你的身体欠你一次彻底的休息。"
+  }
+};
+
+// ---- State ----
+let answers = {};
+let currentQ = 0;
+
+// ---- Build screens ----
+const app = document.getElementById('app');
+
+questions.forEach((q, i) => {
+  const screen = document.createElement('div');
+  screen.className = 'screen';
+  screen.id = 'q' + i;
+
+  let optsHTML = q.opts.map(o => `
+    <div class="option" data-letter="${o.letter}" onclick="select(${i}, '${o.letter}', this)">
+      <span class="letter">${o.letter}</span>
+      <span>${o.text}</span>
+    </div>
+  `).join('');
+
+  let dotsHTML = questions.map((_, d) => {
+    let cls = d < i ? 'done' : (d === i ? 'current' : '');
+    return `<div class="progress-dot ${cls}"></div>`;
+  }).join('');
+
+  screen.innerHTML = `
+    <div class="question-header">
+      <span class="question-num">第 ${i+1} / ${questions.length} 题</span>
+    </div>
+    <div class="question-text">${q.q}</div>
+    <div class="options">${optsHTML}</div>
+    <button class="btn-primary btn-next" id="btn${i}" onclick="next(${i})">${i < questions.length-1 ? '下一题 →' : '查看结果'}</button>
+    <div class="hint-tap" id="hint${i}">👆 请先选择一个答案</div>
+    <div class="progress-bar">${dotsHTML}</div>
+  `;
+
+  app.appendChild(screen);
+});
+
+// Result screen
+const resultScreen = document.createElement('div');
+resultScreen.className = 'screen result';
+resultScreen.id = 'result';
+app.appendChild(resultScreen);
+
+// Footer
+const footer = document.createElement('div');
+footer.className = 'footer';
+footer.textContent = '湖南润鼎文化 · 中国NLP中心';
+app.appendChild(footer);
+
+// ---- Functions ----
+function start() {
+  answers = {};
+  currentQ = 0;
+  switchTo('q0');
+}
+
+function select(qIdx, letter, el) {
+  answers[qIdx] = letter;
+  const parent = el.parentElement;
+  parent.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('btn'+qIdx).classList.add('enabled');
+  document.getElementById('hint'+qIdx).classList.add('hidden');
+}
+
+function next(qIdx) {
+  if (answers[qIdx] === undefined) return;
+  if (qIdx < questions.length - 1) {
+    currentQ = qIdx + 1;
+    switchTo('q'+currentQ);
+  } else {
+    showResult();
+  }
+}
+
+function switchTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showResult() {
+  // Count
+  let counts = { A:0, B:0, C:0, D:0 };
+  for (let i=0; i<7; i++) {
+    counts[answers[i]] = (counts[answers[i]]||0) + 1;
+  }
+  let maxLetter = Object.keys(counts).reduce((a,b) => counts[a]>=counts[b] ? a : b);
+  let r = results[maxLetter];
+
+  resultScreen.innerHTML = `
+    <span class="type-badge">${r.label}</span>
+    <div class="type-title">${r.label}</div>
+    <p class="quote">${r.quote}</p>
+    <div class="insight">${r.insight}</div>
+    <p class="course-recommend">${r.course}</p>
+    <p style="color:#999;font-size:12px;margin-top:-12px;">${r.drink}</p>
+    <div class="actions">
+      <button class="btn-outline" onclick="retake()">⟳ 再测一次</button>
+      <button class="btn-primary" onclick="share()">分享给朋友</button>
+    </div>
+  `;
+
+  switchTo('result');
+}
+
+function retake() {
+  answers = {};
+  currentQ = 0;
+  switchTo('cover');
+}
+
+function share() {
+  if (navigator.share) {
+    navigator.share({ title: '你的焦虑，来自哪里？', text: '来测测你的焦虑根源', url: location.href });
+  } else {
+    alert('复制链接分享给朋友吧！');
+  }
+}
+</script>
+
+</body>
+</html>
